@@ -1,64 +1,42 @@
 #!/bin/bash
 
-THIS_DIR=`dirname $0`
-LOCK_FILE=$THIS_DIR/jbackup.lock
+THIS_DIR=`dirname "$0"`
+FILE_BASENAME=`basename "$0" .sh`
+LOCK_FILE=$THIS_DIR/$FILE_BASENAME.lock
 
-if [ "$1" == "v" ] 
-	then 
-		VERBOSE=true
-	else
-		VERBOSE=false
-fi;
+clear
 
-function print {
-	if [ $VERBOSE == false ]
-		then
-			return
-	fi;
-	
-	echo -ne $1
-}
-
-print "\n\n#########################################\n"
-print "# JBacup - JoseRobinson.com (c) 2012\t#\n"
-print "#########################################\n\n\n"
+echo "#########################################"
+echo "# JBackup - JoseRobinson.com (c) 2012\t#"
+echo "#########################################"
+echo 
 
 # Si el fichero de lock existe es por que ya se esta corriendo el proceso.
 if [ -f $LOCK_FILE ]; 
 then 
-	print "El proceso ya esta corriendo.\n"
-	exit;
+	echo "Backup already in progress."
+	exit 1;
 else
-	print "Iniciando el proceso.\n"
+	echo "Starting backup."
 	touch $LOCK_FILE
-fi;
+fi
 
-print "\n"
-
+echo 
 	
-# Se lee el listado de recursos que deben copiarse.
-for item_to_bak in `cat $THIS_DIR/jbackup.csv`; 
+for PATH_ITEM in `cat $THIS_DIR/$FILE_BASENAME.csv` 
 do 
-	path_source=`echo $item_to_bak | cut -d , -f 1`
-	path_target=`echo $item_to_bak | cut -d , -f 2`
+	SOURCE_PATH=`echo $PATH_ITEM | cut -d "," -f 1`
+	TARGET_PATH=`echo $PATH_ITEM | cut -d "," -f 2`
 	
-	print "• $path_source"
-	rsync -au --delete $path_source $path_target
-	print "\t\t\t\t\t\t\t\t\t\t[OK]\n"
-	
+	echo -n "• $SOURCE_PATH"
+	rsync -ua --exclude="node_modules/" --exclude="vendor/" --delete $SOURCE_PATH $TARGET_PATH
+	echo -e "\r✔ $SOURCE_PATH"
 done;
 
-
-# Al finalizar eliminamos el fichero de lock.
+# Then, the lock file is deleted.
 rm $LOCK_FILE
 
-
-print "\n"
-print "Proceso finalizado exitosamente\n"
-print "\n\n"
+echo 
+echo "Backup finished."
 
 exit 0
-
-
-# Para comprimir los archivos:
-#zip -r0u b.zip a
